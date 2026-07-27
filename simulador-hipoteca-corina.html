@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hipoteca Clara · Simulador Corina — Edificio Interbank La Victoria</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1120; --panel:#141d31; --panel2:#1d2942; --line:#2c3a58;
+    --txt:#e8eefc; --muted:#93a3c4; --accent:#38bdf8;
+    --c1:#34d399; --c2:#fbbf24; --c3:#a78bfa; --gray:#8fa1c4; --red:#f87171;
+    --grad1:#0ea5e9; --grad2:#8b5cf6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:
+    radial-gradient(1200px 500px at 80% -10%,rgba(139,92,246,.15),transparent),
+    radial-gradient(1000px 400px at 0% 0%,rgba(14,165,233,.12),transparent),var(--bg);color:var(--txt);line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 80px}
+  .hero{background:linear-gradient(120deg,rgba(14,165,233,.18),rgba(139,92,246,.18));border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:18px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:.92rem}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:rgba(9,14,26,.55);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+  .kpi .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .kpi .v{font-size:1.35rem;font-weight:800;margin-top:3px}
+  .kpi .s{font-size:.72rem;color:var(--muted)}
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .card h2{font-size:1.05rem;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  label{display:block;font-size:.76rem;color:var(--muted);margin:8px 0 4px}
+  input,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;font-size:.92rem}
+  input[type=range]{padding:0}
+  .fixed{background:var(--panel2);border-radius:9px;padding:8px 11px;font-size:.88rem;border:1px dashed var(--line)}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  button{background:linear-gradient(120deg,var(--grad1),var(--grad2));color:#fff;border:none;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:.88rem}
+  button.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line);font-weight:600}
+  button:hover{filter:brightness(1.08)}
+  .note{font-size:.82rem;color:var(--muted);background:var(--panel2);border-radius:11px;padding:12px 14px;margin-top:10px}
+  .note b{color:var(--txt)}
+  .scn{border-radius:13px;padding:14px;border:1px solid var(--line);background:var(--panel2)}
+  .scn.on1{border-top:4px solid var(--c1)} .scn.on2{border-top:4px solid var(--c2)} .scn.on3{border-top:4px solid var(--c3)}
+  .scn h3{margin:0 0 8px;font-size:.95rem;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .d1{background:var(--c1)}.d2{background:var(--c2)}.d3{background:var(--c3)}
+  .radio-group{display:flex;gap:6px;margin-top:4px}
+  .radio-group label{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px;cursor:pointer;flex:1;margin:0;color:var(--txt);font-size:.76rem;text-align:center}
+  .radio-group input{display:none}
+  .radio-group label:has(input:checked){border-color:var(--accent);background:#0b3a4d;color:var(--accent);font-weight:700}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:.8rem}
+  .metrics div span{color:var(--muted)}.metrics b{color:var(--txt)}
+  canvas{max-width:100%}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:8px}
+  th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:.7rem;text-transform:uppercase}
+  .infl{color:var(--accent);font-weight:600}
+  .toggle{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
+  details{margin-top:10px}summary{cursor:pointer;color:var(--accent);font-size:.88rem}
+  .edu{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:900px){.edu{grid-template-columns:1fr}}
+  .educ{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px}
+  .educ h4{margin:0 0 5px;font-size:.9rem;color:var(--accent)}
+  .educ p{margin:4px 0;font-size:.8rem;color:var(--muted)}
+  .badge{display:inline-block;font-size:.66rem;padding:2px 9px;border-radius:20px;font-weight:700}
+  .b-green{background:#064e3b;color:#6ee7b7}.b-amber{background:#78350f;color:#fcd34d}.b-purple{background:#4c1d95;color:#c4b5fd}
+  .contact{background:linear-gradient(120deg,rgba(52,211,153,.14),rgba(56,189,248,.14));border:1px solid var(--line)}
+  .contact a{color:var(--accent);font-weight:700;text-decoration:none}
+  .chk{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--txt);margin-top:8px}
+  .chk input{width:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🏠 Hipoteca Clara — Simulador de Amortización</h1>
+    <div class="sub">Departamento 40 m² · Edificio Interbank, Av. Carlos Villarán 140, La Victoria 15034 · Airbnb · Meta: pagar en 4 años</div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Cuota total est.</div><div class="v" id="kpiCuota">—</div><div class="s">interés + capital + seguros</div></div>
+      <div class="kpi"><div class="k">TCEA estimada</div><div class="v" id="kpiTcea">—</div><div class="s">carta: 8.8911%</div></div>
+      <div class="kpi"><div class="k">Plan más rápido</div><div class="v" id="kpiTime">—</div><div class="s">hasta liquidar</div></div>
+      <div class="kpi"><div class="k">Interés ahorrado</div><div class="v" id="kpiSave">—</div><div class="s">vs. no amortizar</div></div>
+      <div class="kpi"><div class="k">Cuota / Ingreso</div><div class="v" id="kpiDti">—</div><div class="s">ratio DTI</div></div>
+    </div>
+  </div>
+
+  <!-- DATOS -->
+  <div class="card">
+    <h2>📋 Datos del crédito <span class="badge b-green">tu carta de desembolso</span></h2>
+    <div class="row">
+      <div><label>Valor del inmueble (S/)</label><input type="number" id="pv" value="250000"></div>
+      <div><label>Monto financiado (S/)</label><input type="number" id="P" value="225000"></div>
+      <div><label>TEA (%)</label><input type="number" id="tea" value="8.00" step="0.01"></div>
+      <div><label>Plazo (años)</label><input type="number" id="ny" value="20"></div>
+      <div><label>Ingreso mensual (S/, para DTI)</label><input type="number" id="income" value="6000"></div>
+    </div>
+    <details>
+      <summary>⚙️ Costos y seguros avanzados (para TCEA real)</summary>
+      <div class="row" style="margin-top:10px">
+        <div><label>Desgravamen (% mensual s/saldo)</label><input type="number" id="desg" value="0.030" step="0.001"></div>
+        <div><label>Seguro del bien (% anual s/inmueble)</label><input type="number" id="pins" value="0.22" step="0.01"></div>
+        <div><label>Cargo administrativo (S/ mes)</label><input type="number" id="admin" value="20"></div>
+        <div><label>Gastos iniciales (S/)</label><input type="number" id="upfront" value="0"></div>
+      </div>
+      <div id="bonosBox" style="margin-top:12px"></div>
+      <div class="chk"><input type="checkbox" id="bbp"><label for="bbp" style="margin:0">Aplicar Bono del Buen Pagador MiVivienda (según valor del inmueble)</label></div>
+      <div class="chk"><input type="checkbox" id="green"><label for="green" style="margin:0">Vivienda sostenible (+ S/ 6,300)</label></div>
+      <div class="note" id="bbpNote"></div>
+    </details>
+    <div class="note">El interés que amortiza capital usa la <b>TEA 8%</b>. La <b>TCEA</b> se estima con la TIR real del flujo (cuota + desgravamen + seguro del bien + cargo), igual que el modelo de Hipoteca Clara Perú. Al amortizar capital baja el interés <b>y</b> el desgravamen (se cobra sobre el saldo).</div>
+  </div>
+
+  <!-- ESCENARIOS -->
+  <div class="card" style="margin-top:16px">
+    <h2>⚖️ Compara tus escenarios (hasta 3)</h2>
+    <div class="grid cols-3" id="scnGrid"></div>
+  </div>
+
+  <!-- SLIDER TIEMPO -->
+  <div class="card" style="margin-top:16px">
+    <h2>🎚️ Explora en el tiempo — mueve la barra (X = año)</h2>
+    <input type="range" id="timeYr" min="0" max="20" value="0" step="0.25">
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:2px">
+      <span>Hoy (año 0)</span><span id="timeYrLbl" style="color:var(--accent);font-weight:700">Año 0</span><span id="timeYrEnd">Año 20</span></div>
+    <div id="timeReadout" class="grid cols-3" style="margin-top:12px"></div>
+    <div class="note">La línea punteada marca ese momento en los gráficos de tiempo. El panel muestra, para cada escenario, cuánto <b>saldo</b> te queda, cuánto <b>capital</b> ya pagaste (%) y qué parte de la cuota es interés.</div>
+  </div>
+
+  <!-- % INTERES -->
+  <div class="card" style="margin-top:16px">
+    <h2>📈 % de cada cuota que se va en interés — y punto de inflexión</h2>
+    <canvas id="chartPct" height="120"></canvas>
+    <div class="note" id="inflNote"></div>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <div class="card"><h2>💸 Interés acumulado vs. % de capital pagado</h2><canvas id="chartCum" height="150"></canvas>
+      <div class="note">Para el mismo % del depa pagado, la curva más baja cuesta menos interés. La distancia vertical = tu ahorro.</div></div>
+    <div class="card"><h2>🧱 Composición de la cuota por año (Escenario 1)</h2><canvas id="chartComp" height="150"></canvas>
+      <div class="note">Cada barra muestra cuánto de lo que pagas ese año es <b>capital</b>, <b>interés</b> y <b>seguros/cargos</b>.</div></div>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <div class="card"><h2>⏱️ Años hasta liquidar</h2><canvas id="chartTime" height="170"></canvas></div>
+    <div class="card"><h2>🧮 Interés total pagado</h2><canvas id="chartTot" height="170"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>📉 Evolución del saldo de deuda (años)</h2>
+    <canvas id="chartSaldo" height="115"></canvas>
+  </div>
+
+  <!-- EDUCACION -->
+  <div class="card" style="margin-top:16px">
+    <h2>🎓 Conceptos clave</h2>
+    <div class="edu" id="eduGrid"></div>
+  </div>
+
+  <!-- DESCARGA -->
+  <div class="card" style="margin-top:16px">
+    <h2>⬇️ Descargar todo</h2>
+    <div class="row" style="flex-wrap:wrap;gap:10px">
+      <div style="flex:none"><button id="dlReport">📄 Descargar PDF completo (datos + gráficos)</button></div>
+      <div style="flex:none"><button class="ghost" id="dlAll">Datos CSV (todos los escenarios)</button></div>
+      <div style="flex:none"><button class="ghost" id="dl1">CSV Esc. 1</button></div>
+      <div style="flex:none"><button class="ghost" id="dl2">CSV Esc. 2</button></div>
+      <div style="flex:none"><button class="ghost" id="dl3">CSV Esc. 3</button></div>
+    </div>
+    <div class="note">El <b>Informe completo</b> descarga un archivo con los KPIs, la tabla de escenarios y <b>todos los gráficos como imágenes</b> — ábrelo y usa "Imprimir → Guardar como PDF". El CSV trae el cronograma mes a mes con interés, capital, seguros, cargos, saldo y % interés.</div>
+    <details><summary>Ver cronograma anual (Escenario 1)</summary><div style="overflow-x:auto"><table id="tabla"></table></div></details>
+  </div>
+
+  <!-- ASESORIA -->
+  <div class="card contact" style="margin-top:16px">
+    <h2>💬 ¿Quieres asesoría personalizada?</h2>
+    <p style="margin:4px 0;color:var(--txt)">Si necesitas que revisemos tu caso puntual —estrategia de amortización, Airbnb, o comparar ofertas de bancos— escríbeme.</p>
+    <p style="margin:8px 0"><b>Corina Lazo</b> · Asesoría financiera e hipotecaria<br>
+      📧 <a href="mailto:lazocorinafanny123@gmail.com?subject=Asesor%C3%ADa%20hipotecaria">lazocorinafanny123@gmail.com</a></p>
+    <div class="note">Herramienta educativa de planificación, no asesoría financiera formal. Confirma cuotas, seguros y condiciones de prepago con tu banco.</div>
+  </div>
+
+  <div class="sub" style="margin-top:18px;font-size:.76rem">Modelo basado en el proyecto "Hipoteca Clara Perú". Fuentes: SBS (compara costos de créditos), Fondo MiVivienda / MVCS (Bono del Buen Pagador, DS N.° 004-2025-VIVIENDA). En Perú la amortización parcial no tiene penalidad, pero <b>debes indicar por escrito si es a reducción de plazo o de cuota</b> en cada pago.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=v=>'S/ '+Math.round(v).toLocaleString('es-PE');
+const pct=v=>v.toFixed(2)+'%';
+const yTxt=m=>{const y=Math.floor(m/12),mo=Math.round(m%12);return y+'a '+mo+'m';};
+const COL=['#34d399','#fbbf24','#a78bfa'];
+
+// Plugin: línea vertical (cursor de tiempo) para gráficos con eje X en años
+const vLine={id:'vline',afterDatasetsDraw(chart){
+  const x=chart.$vlineX; if(x==null)return;
+  const xs=chart.scales.x; if(!xs)return;
+  const px=xs.getPixelForValue(x); const a=chart.chartArea; const ctx=chart.ctx;
+  ctx.save();ctx.strokeStyle='rgba(232,238,252,.8)';ctx.setLineDash([4,4]);ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(px,a.top);ctx.lineTo(px,a.bottom);ctx.stroke();ctx.restore();
+}};
+Chart.register(vLine);
+
+// --- MOTOR FINANCIERO (portado de lib/finance) ---
+const teaToMonthly=tea=> tea<=-1?0:Math.pow(1+tea,1/12)-1;
+const annuity=(P,i,n)=> n<=0?0:(i===0?P/n:P*i/(1-Math.pow(1+i,-n)));
+function npv(r,cf){let s=0;for(let k=0;k<cf.length;k++)s+=cf[k]/Math.pow(1+r,k);return s;}
+function irrMonthly(cf){let lo=-0.9999,hi=1.5,lv=npv(lo,cf),hv=npv(hi,cf);
+  if(isNaN(lv)||isNaN(hv)||lv*hv>0)return null;
+  for(let k=0;k<160;k++){const mid=(lo+hi)/2,mv=npv(mid,cf);
+    if(Math.abs(mv)<1e-8)return mid; if(lv*mv<=0){hi=mid;hv=mv;}else{lo=mid;lv=mv;}}
+  return (lo+hi)/2;}
+
+// Brackets Bono Buen Pagador (DS 004-2025-VIVIENDA)
+const BBP=[[68800,98100,27400],[98100.01,146900,22800],[146900.01,244600,20900],[244600.01,362100,7800]];
+function bbpBonus(pv,green){const b=BBP.find(x=>pv>=x[0]&&pv<=x[1]);let base=b?b[2]:0;return base>0?base+(green?6300:0):0;}
+
+function simulate(cfg){
+  // cfg: {P,tea,term,pv,desg(mensual dec),pins(anual dec),admin,upfront,lump,extra,mode}
+  const i=teaToMonthly(cfg.tea);
+  const propMonthly=cfg.pv*cfg.pins/12;
+  const baseInst=annuity(cfg.P,i,cfg.term);
+  let bal=cfg.P, inst=baseInst;
+  let cumInt=0,cumPrin=0,totInt=0,totIns=0,totAdmin=0,totExtra=0;
+  const rows=[]; const cf=[cfg.P-cfg.upfront];
+  for(let p=1;p<=cfg.term+2 && bal>0.01;p++){
+    const open=bal;
+    const interest=open*i;
+    let prin=inst-interest; if(prin<0)prin=0; if(prin>open)prin=open;
+    let extra=(p===1?cfg.lump:0)+cfg.extra;
+    extra=Math.min(extra,Math.max(open-prin,0));
+    const desg=open*cfg.desg, pins=propMonthly, adm=cfg.admin;
+    const close=Math.max(open-prin-extra,0);
+    const outflow=inst+extra+desg+pins+adm;
+    cumInt+=interest;cumPrin+=prin+extra;totInt+=interest;totIns+=desg+pins;totAdmin+=adm;totExtra+=extra;
+    const financialCuota=interest+prin+extra;
+    rows.push({p,yr:p/12,open,inst,interest,prin,extra,seg:desg+pins,adm,outflow,close,cumInt,cumPrin,
+      intPct:financialCuota>0?interest/financialCuota*100:0});
+    cf.push(-outflow); bal=close;
+    if(cfg.mode==='reduce_payment'&&extra>0&&bal>0.01){const rem=cfg.term-p; if(rem>0){inst=annuity(bal,i,rem);}}
+  }
+  const irr=irrMonthly(cf);
+  const tcea=irr==null?cfg.tea:Math.pow(1+irr,12)-1;
+  let infl=rows.findIndex(r=>r.intPct<50);
+  return {rows,months:rows.length,baseInst,tcea,totInt,totIns,totAdmin,totExtra,
+    totalPaid:rows.reduce((s,r)=>s+r.outflow,0),
+    infl:infl<0?null:infl,firstCuota:rows[0]?rows[0].outflow:0};
+}
+
+const scnDefaults=[
+  {name:'Agresivo (meta 4a)',lump:40000,extra:3000,mode:'reduce_term',on:true},
+  {name:'Moderado',lump:20000,extra:1500,mode:'reduce_term',on:true},
+  {name:'Reducir cuota',lump:40000,extra:0,mode:'reduce_payment',on:true},
+];
+
+function baseCfg(){
+  const green=$('green').checked;
+  const pv=+$('pv').value;
+  let P=+$('P').value;
+  const bonus=$('bbp').checked?bbpBonus(pv,green):0;
+  $('bbpNote').innerHTML = $('bbp').checked
+    ? (bonus>0?`Bono aplicable para inmueble de ${fmt(pv)}: <b>${fmt(bonus)}</b> — reduce el capital a financiar a <b>${fmt(Math.max(P-bonus,0))}</b>.`
+             :`Para ${fmt(pv)} no hay bono en los rangos vigentes del BBP.`)
+    : 'El BBP se aplica al originar el crédito MiVivienda. Tu carta muestra financiamiento directo; actívalo solo si tu crédito es MiVivienda.';
+  return {
+    pv, P:Math.max(P-bonus,0), tea:+$('tea').value/100, term:Math.round(+$('ny').value*12),
+    desg:+$('desg').value/100, pins:+$('pins').value/100, admin:+$('admin').value, upfront:+$('upfront').value
+  };
+}
+
+let results=[], baseline;
+let charts={};
+
+function buildScnUI(){
+  const g=$('scnGrid'); g.innerHTML='';
+  scnDefaults.forEach((s,k)=>{const idx=k+1;
+    g.insertAdjacentHTML('beforeend',`
+    <div class="scn on${idx}">
+      <h3><span><span class="dot d${idx}"></span> Escenario ${idx}</span>
+        <label class="toggle"><input type="checkbox" class="scnOn" data-i="${k}" ${s.on?'checked':''}> ver</label></h3>
+      <label>Nombre</label><input type="text" class="scnName" data-i="${k}" value="${s.name}">
+      <div class="row">
+        <div><label>Ahorro inicial (S/)</label><input type="number" class="scnLump" data-i="${k}" value="${s.lump}" step="1000"></div>
+        <div><label>Extra mensual (S/)</label><input type="number" class="scnExtra" data-i="${k}" value="${s.extra}" step="100"></div>
+      </div>
+      <label>Modo</label>
+      <div class="radio-group">
+        <label><input type="radio" name="mode${k}" class="scnMode" data-i="${k}" value="reduce_term" ${s.mode==='reduce_term'?'checked':''}>Reducir plazo</label>
+        <label><input type="radio" name="mode${k}" class="scnMode" data-i="${k}" value="reduce_payment" ${s.mode==='reduce_payment'?'checked':''}>Reducir cuota</label>
+      </div>
+      <div class="metrics" id="m${idx}"></div>
+    </div>`);
+  });
+  g.querySelectorAll('input').forEach(el=>el.addEventListener('input',recalc));
+}
+
+function readScns(){return scnDefaults.map((_,k)=>({
+  name:document.querySelector(`.scnName[data-i="${k}"]`).value,
+  lump:+document.querySelector(`.scnLump[data-i="${k}"]`).value||0,
+  extra:+document.querySelector(`.scnExtra[data-i="${k}"]`).value||0,
+  mode:document.querySelector(`.scnMode[data-i="${k}"]:checked`).value,
+  on:document.querySelector(`.scnOn[data-i="${k}"]`).checked}));}
+
+function recalc(){
+  const bc=baseCfg();
+  baseline=simulate({...bc,lump:0,extra:0,mode:'reduce_term'});
+  const scns=readScns();
+  results=scns.map(s=>({...s,r:simulate({...bc,lump:s.lump,extra:s.extra,mode:s.mode})}));
+
+  results.forEach((o,k)=>{const idx=k+1,r=o.r;
+    $('m'+idx).innerHTML=
+      `<div><span>Liquida en</span><br><b>${yTxt(r.months)}</b></div>`+
+      `<div><span>Cuota total</span><br><b>${fmt(r.firstCuota)}</b></div>`+
+      `<div><span>TCEA est.</span><br><b>${pct(r.tcea*100)}</b></div>`+
+      `<div><span>Interés total</span><br><b>${fmt(r.totInt)}</b></div>`+
+      `<div><span>Inflexión</span><br><b>${r.infl!=null?'año '+(r.infl/12).toFixed(1):'—'}</b></div>`+
+      `<div><span>Ahorro interés</span><br><b style="color:${COL[k]}">${fmt(baseline.totInt-r.totInt)}</b></div>`;
+  });
+
+  // KPIs (primer escenario activo)
+  const prim=results.find(o=>o.on)||results[0];
+  $('kpiCuota').textContent=fmt(prim.r.firstCuota);
+  $('kpiTcea').textContent=pct(prim.r.tcea*100);
+  $('kpiTime').textContent=yTxt(prim.r.months);
+  $('kpiSave').textContent=fmt(baseline.totInt-prim.r.totInt);
+  const dti=prim.r.firstCuota/(+$('income').value||1)*100;
+  $('kpiDti').textContent=pct(dti);
+
+  renderBonos();
+  drawPct();drawCum();drawComp();drawBars();drawSaldo();drawTabla();
+  updateTime();
+}
+
+function renderBonos(){
+  const pv=+$('pv').value, green=$('green').checked;
+  const b=BBP.find(x=>pv>=x[0]&&pv<=x[1]);
+  if(b){const base=b[2], tot=base+(green?6300:0);
+    $('bonosBox').innerHTML=`<div class="note" style="border-left:3px solid var(--c1)"><b>✅ Posible bono: Bono del Buen Pagador (MiVivienda)</b><br>
+      Para un inmueble de ${fmt(pv)} (tramo ${fmt(b[0])}–${fmt(b[1])}) el bono es <b>${fmt(base)}</b>${green?` + adicional sostenible ${fmt(6300)} = <b>${fmt(tot)}</b>`:''}.<br>
+      <span style="font-size:.78rem">Requisitos: mayor de 18, no ser propietario de otra vivienda a nivel nacional, tener la cuota inicial mínima (7.5%) y ser sujeto de crédito. Aplica al originar un crédito MiVivienda.</span></div>`;
+  } else {
+    $('bonosBox').innerHTML=`<div class="note">Para un inmueble de ${fmt(pv)} no hay Bono del Buen Pagador en los rangos vigentes (S/ 68,800 – S/ 362,100).</div>`;
+  }
+}
+
+function updateTime(){
+  const maxY=Math.ceil(baseline.months/12);
+  $('timeYr').max=maxY; $('timeYrEnd').textContent='Año '+maxY;
+  if(+$('timeYr').value>maxY)$('timeYr').value=maxY;
+  applyTimeCursor(+$('timeYr').value);
+}
+function applyTimeCursor(yr){
+  $('timeYrLbl').textContent='Año '+(Math.round(yr*100)/100);
+  [charts.pct,charts.saldo].forEach(c=>{if(c){c.$vlineX=yr;c.update('none');}});
+  let html='';
+  active().forEach(o=>{const r=o.r,last=r.rows[r.rows.length-1].cumPrin,m=Math.round(yr*12);let row;
+    if(m<=0)row={close:r.rows[0].open,cumPrin:0,intPct:r.rows[0].intPct,outflow:r.rows[0].outflow};
+    else if(m>=r.rows.length)row={close:0,cumPrin:last,intPct:0,outflow:0};
+    else row=r.rows[m-1];
+    const paid=row.cumPrin/last*100;
+    html+=`<div class="kpi" style="border-top:3px solid ${COL[o.k]}">
+      <div class="k">${o.name}</div>
+      <div class="v" style="font-size:1.1rem">${fmt(row.close)}</div>
+      <div class="s">saldo · ${paid.toFixed(0)}% capital pagado</div>
+      <div class="s">cuota ${fmt(row.outflow)} · ${row.intPct.toFixed(0)}% interés</div></div>`;});
+  $('timeReadout').innerHTML=html||'<div class="note">Activa al menos un escenario.</div>';
+}
+$('timeYr').addEventListener('input',()=>applyTimeCursor(+$('timeYr').value));
+
+const active=()=>results.map((o,k)=>({...o,k})).filter(o=>o.on);
+
+function lineOpts(xTitle,yTitle,yCb,xMax){return{responsive:true,parsing:false,interaction:{mode:'nearest',intersect:false},
+  scales:{x:{type:'linear',min:0,max:xMax,title:{display:true,text:xTitle,color:'#93a3c4'},ticks:{color:'#93a3c4',callback:v=>v+'a'},grid:{color:'#1b2540'}},
+    y:{title:{display:true,text:yTitle,color:'#93a3c4'},ticks:{color:'#93a3c4',callback:yCb},grid:{color:'#1b2540'}}},
+  plugins:{legend:{labels:{color:'#e8eefc'}}}};}
+
+function drawPct(){
+  const ds=[];let infl=[];
+  active().forEach(o=>{
+    const last=o.r.rows[o.r.rows.length-1].cumPrin;
+    const data=o.r.rows.map(x=>({x:x.yr,y:x.intPct,sInt:x.interest,sCap:x.prin+x.extra,saldo:x.close,pctPaid:x.cumPrin/last*100,cuota:x.outflow}));
+    const pr=o.r.rows.map((x,ix)=>ix===o.r.infl?7:0);
+    ds.push({label:o.name,data,borderColor:COL[o.k],backgroundColor:COL[o.k],borderWidth:2.4,pointRadius:pr,pointHoverRadius:6,pointBackgroundColor:'#fff',pointBorderColor:COL[o.k],pointBorderWidth:2,tension:.1});
+    if(o.r.infl!=null)infl.push(`<span style="color:${COL[o.k]}">●</span> <b>${o.name}</b>: el capital supera al interés en el <b>año ${(o.r.infl/12).toFixed(1)}</b>`);
+  });
+  const opt=lineOpts('Años','% de la cuota que es interés',v=>v+'%');
+  opt.scales.y.min=0;opt.scales.y.max=100;
+  opt.plugins.tooltip={callbacks:{
+    title:items=>items.length?'Año '+items[0].raw.x.toFixed(1):'',
+    label:c=>c.dataset.label,
+    afterLabel:c=>{const r=c.raw;return [`  ${r.y.toFixed(1)}% interés · ${(100-r.y).toFixed(1)}% capital`,`  Interés: ${fmt(r.sInt)} · Capital: ${fmt(r.sCap)}`,`  Cuota: ${fmt(r.cuota)} · Saldo: ${fmt(r.saldo)}`,`  Capital pagado: ${r.pctPaid.toFixed(0)}%`];}
+  }};
+  charts.pct&&charts.pct.destroy();charts.pct=new Chart($('chartPct'),{type:'line',data:{datasets:ds},options:opt});
+  $('inflNote').innerHTML='<b>Puntos de inflexión (50/50):</b><br>'+(infl.join('<br>')||'—')+'<br><br>Antes del punto pagas sobre todo interés; después empiezas a "comprar" tu depa. Amortizar adelanta ese punto hacia la izquierda.';
+}
+function drawCum(){
+  const ds=active().map(o=>{const last=o.r.rows[o.r.rows.length-1].cumPrin;
+    return {label:o.name,data:o.r.rows.map(x=>({x:x.cumPrin/last*100,y:x.cumInt,yr:x.yr,saldo:x.close})),borderColor:COL[o.k],backgroundColor:COL[o.k],borderWidth:2.4,pointRadius:0,pointHoverRadius:6,tension:.05};});
+  const opt=lineOpts('% del capital amortizado','Interés acumulado (S/)',v=>'S/ '+(v/1000)+'k',100);
+  opt.scales.x.ticks.callback=v=>v+'%';
+  opt.plugins.tooltip={callbacks:{
+    title:items=>items.length?items[0].raw.x.toFixed(0)+'% del capital pagado':'',
+    label:c=>c.dataset.label,
+    afterLabel:c=>{const r=c.raw;return [`  Interés acumulado: ${fmt(r.y)}`,`  En el año ${r.yr.toFixed(1)} · Saldo: ${fmt(r.saldo)}`];}}};
+  charts.cum&&charts.cum.destroy();charts.cum=new Chart($('chartCum'),{type:'line',data:{datasets:ds},options:opt});
+}
+function drawComp(){
+  const o=active()[0]||results[0]; const r=o.r;
+  const years=Math.ceil(r.months/12);
+  const cap=[],int=[],seg=[],labels=[];
+  for(let y=0;y<years;y++){let c=0,i2=0,s=0;
+    for(let m=y*12;m<Math.min((y+1)*12,r.rows.length);m++){c+=r.rows[m].prin+r.rows[m].extra;i2+=r.rows[m].interest;s+=r.rows[m].seg+r.rows[m].adm;}
+    labels.push('A'+(y+1));cap.push(c);int.push(i2);seg.push(s);}
+  const opt={responsive:true,plugins:{legend:{labels:{color:'#e8eefc'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.parsed.y)}}},
+    scales:{x:{stacked:true,ticks:{color:'#93a3c4'},grid:{display:false}},y:{stacked:true,ticks:{color:'#93a3c4',callback:v=>'S/ '+(v/1000)+'k'},grid:{color:'#1b2540'}}}};
+  charts.comp&&charts.comp.destroy();charts.comp=new Chart($('chartComp'),{type:'bar',data:{labels,datasets:[
+    {label:'Capital',data:cap,backgroundColor:'#34d399',borderRadius:4},
+    {label:'Interés',data:int,backgroundColor:'#f87171',borderRadius:4},
+    {label:'Seguros/cargos',data:seg,backgroundColor:'#64748b',borderRadius:4}]},options:opt});
+}
+function drawBars(){
+  const a=active();const labels=a.map(o=>o.name);const cols=a.map(o=>COL[o.k]);
+  const mk=(cv,data,cb)=>({type:'bar',data:{labels,datasets:[{data,backgroundColor:cols,borderRadius:6}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>cb(c.parsed.y)}}},
+    scales:{x:{ticks:{color:'#93a3c4'},grid:{display:false}},y:{ticks:{color:'#93a3c4',callback:cb2=>cv==='t'?cb2+'a':'S/ '+(cb2/1000)+'k'},grid:{color:'#1b2540'}}}}});
+  charts.time&&charts.time.destroy();charts.time=new Chart($('chartTime'),mk('t',a.map(o=>o.r.months/12),y=>yTxt(y*12)));
+  charts.tot&&charts.tot.destroy();charts.tot=new Chart($('chartTot'),mk('m',a.map(o=>o.r.totInt),y=>fmt(y)));
+}
+function drawSaldo(){
+  const P=+$('P').value;
+  const mkPts=r=>{const last=r.rows[r.rows.length-1].cumPrin;return [{x:0,y:r.rows[0].open,pctPaid:0,cumInt:0}].concat(r.rows.map(x=>({x:x.yr,y:x.close,pctPaid:x.cumPrin/last*100,cumInt:x.cumInt})));};
+  const ds=[{label:'Sin amortizar',data:mkPts(baseline),borderColor:'#64748b',borderWidth:1.5,borderDash:[5,4],pointRadius:0,pointHoverRadius:5,tension:.1}];
+  active().forEach(o=>ds.push({label:o.name,data:mkPts(o.r),borderColor:COL[o.k],borderWidth:2.4,pointRadius:0,pointHoverRadius:6,tension:.1}));
+  const opt=lineOpts('Años','Saldo (S/)',v=>'S/ '+(v/1000)+'k',Math.ceil(baseline.months/12));
+  opt.plugins.tooltip={callbacks:{
+    title:items=>items.length?'Año '+items[0].raw.x.toFixed(1):'',
+    label:c=>c.dataset.label,
+    afterLabel:c=>{const r=c.raw;return [`  Saldo: ${fmt(r.y)}`,`  Capital pagado: ${r.pctPaid.toFixed(0)}% · Interés acum.: ${fmt(r.cumInt)}`];}}};
+  charts.saldo&&charts.saldo.destroy();charts.saldo=new Chart($('chartSaldo'),{type:'line',data:{datasets:ds},options:opt});
+}
+function drawTabla(){
+  const r=(active()[0]||results[0]).r;let rows='<tr><th>Año</th><th>Cuota/mes</th><th>Interés</th><th>Capital</th><th>Seguros</th><th>% cap.</th><th>Saldo</th></tr>';
+  let yi=0,yc=0,ys=0;
+  r.rows.forEach((x,ix)=>{yi+=x.interest;yc+=x.prin+x.extra;ys+=x.seg+x.adm;
+    if((ix+1)%12===0||ix===r.rows.length-1){const yr=Math.ceil((ix+1)/12);
+      const infl=r.infl!=null&&Math.ceil((r.infl+1)/12)===yr?' <span class="infl">◀ inflexión</span>':'';
+      rows+=`<tr><td>Año ${yr}${infl}</td><td>${fmt(x.outflow)}</td><td>${fmt(yi)}</td><td>${fmt(yc)}</td><td>${fmt(ys)}</td><td>${(x.cumPrin/r.rows[r.rows.length-1].cumPrin*100).toFixed(0)}%</td><td>${fmt(x.close)}</td></tr>`;
+      yi=0;yc=0;ys=0;}});
+  $('tabla').innerHTML=rows;
+}
+
+// EDUCACION
+const edu=[
+  ['TEA','Costo puro del dinero al año. Se pasa a mensual con (1+TEA)^(1/12)-1.'],
+  ['TCEA','Costo total real: interés + seguros + comisiones. Aquí se estima con la TIR del flujo.'],
+  ['Cuota','Capital + interés + seguros + cargos. Al inicio casi todo es interés.'],
+  ['Amortización','La parte de la cuota que reduce el saldo. Prepagar la acelera.'],
+  ['Reducir plazo','Mantienes la cuota, acortas años. Máximo ahorro de interés.'],
+  ['Reducir cuota','Bajas el pago mensual, mantienes el plazo. Alivia caja, ahorra menos.']
+];
+$('eduGrid').innerHTML=edu.map(e=>`<div class="educ"><h4>${e[0]}</h4><p>${e[1]}</p></div>`).join('');
+
+// CSV
+function toCSV(o){const r=o.r;let s='Anio,Mes,Cuota_total,Interes,Capital,Extra,Seguros+Cargos,%Interes,Interes_acum,%Capital_pagado,Saldo\n';
+  const last=r.rows[r.rows.length-1].cumPrin;
+  r.rows.forEach(x=>{s+=`${Math.ceil(x.p/12)},${x.p},${x.outflow.toFixed(2)},${x.interest.toFixed(2)},${x.prin.toFixed(2)},${x.extra.toFixed(2)},${(x.seg+x.adm).toFixed(2)},${x.intPct.toFixed(2)},${x.cumInt.toFixed(2)},${(x.cumPrin/last*100).toFixed(2)},${x.close.toFixed(2)}\n`;});
+  return s;}
+function download(name,text,type){const blob=new Blob([text],{type:type||'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
+$('dl1').onclick=()=>download('escenario1.csv',toCSV(results[0]));
+$('dl2').onclick=()=>download('escenario2.csv',toCSV(results[1]));
+$('dl3').onclick=()=>download('escenario3.csv',toCSV(results[2]));
+$('dlAll').onclick=()=>{let s='';results.forEach((o,k)=>{s+=`### ESCENARIO ${k+1}: ${o.name} | ahorro ${o.lump} | extra ${o.extra} | modo ${o.mode} | TCEA ${(o.r.tcea*100).toFixed(2)}%\n`+toCSV(o)+'\n';});download('hipoteca_todos_escenarios.csv',s);};
+
+// INFORME COMPLETO EN PDF (datos + graficos)
+$('dlReport').onclick=()=>{
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  let y=44;
+  doc.setFontSize(18);doc.setTextColor(14,165,233);doc.text('Informe de Amortizacion - Hipoteca Clara',40,y);y+=22;
+  doc.setFontSize(10);doc.setTextColor(70);
+  doc.text('Departamento 40 m2 - Edificio Interbank, Av. Carlos Villaran 140, La Victoria 15034',40,y);y+=14;
+  doc.text(`Monto financiado ${fmt(+$('P').value)} - TEA ${$('tea').value}% - Plazo ${$('ny').value} anios - ${new Date().toLocaleDateString('es-PE')}`,40,y);y+=24;
+  doc.setFontSize(12);doc.setTextColor(0);doc.text('Comparativa de escenarios',40,y);y+=16;
+  const headers=['Escenario','Modo','Ahorro','Extra','Liquida','Cuota','TCEA','Interes','Ahorro'];
+  const colX=[40,150,220,278,332,392,452,502,552];
+  doc.setFontSize(8);doc.setTextColor(30);doc.setFont(undefined,'bold');
+  headers.forEach((h,i)=>doc.text(h,colX[i],y));doc.setFont(undefined,'normal');y+=12;
+  doc.setDrawColor(200);doc.line(40,y-8,W-40,y-8);
+  results.forEach(o=>{const r=o.r;const vals=[o.name.slice(0,16),o.mode==='reduce_term'?'Red.plazo':'Red.cuota',fmt(o.lump),fmt(o.extra),yTxt(r.months),fmt(r.firstCuota),(r.tcea*100).toFixed(2)+'%',fmt(r.totInt),fmt(baseline.totInt-r.totInt)];
+    vals.forEach((v,i)=>doc.text(String(v),colX[i],y));y+=13;});
+  y+=6;doc.setTextColor(100);doc.setFontSize(8);
+  doc.text(`Sin amortizar (base): interes ${fmt(baseline.totInt)} en ${yTxt(baseline.months)}.`,40,y);y+=20;
+
+  const imgs=[['chartPct','% de cuota en interes e inflexion'],['chartSaldo','Evolucion del saldo'],['chartCum','Interes acumulado vs % de capital pagado'],['chartComp','Composicion de la cuota por anio'],['chartTime','Anios hasta liquidar'],['chartTot','Interes total pagado']];
+  imgs.forEach(([id,t])=>{
+    const cv=$(id); if(!cv)return;
+    const imgW=W-80, imgH=Math.min(imgW*(cv.height/cv.width),260);
+    if(y+imgH+30>H-40){doc.addPage();y=44;}
+    doc.setFontSize(11);doc.setTextColor(0);doc.text(t,40,y);y+=8;
+    doc.setFillColor(11,17,32);doc.roundedRect(40,y,imgW,imgH+16,6,6,'F');
+    try{doc.addImage(cv.toDataURL('image/png'),'PNG',48,y+8,imgW-16,imgH);}catch(e){}
+    y+=imgH+28;
+  });
+  if(y+70>H-40){doc.addPage();y=44;}
+  doc.setFontSize(12);doc.setTextColor(0);doc.text('Asesoria personalizada',40,y);y+=15;
+  doc.setFontSize(9);doc.setTextColor(60);
+  doc.text('Corina Lazo - Asesoria financiera e hipotecaria - lazocorinafanny123@gmail.com',40,y);y+=18;
+  doc.setFontSize(7);doc.setTextColor(130);
+  const disc='Herramienta educativa de planificacion, no asesoria formal. Modelo basado en Hipoteca Clara Peru. Fuentes: SBS, Fondo MiVivienda / MVCS (BBP, DS 004-2025-VIVIENDA). Confirma cuotas, seguros y prepago con tu banco. En Peru indica por escrito si amortizas a reduccion de plazo o de cuota.';
+  doc.text(doc.splitTextToSize(disc,W-80),40,y);
+  doc.save('Informe_Hipoteca_Corina.pdf');
+};
+
+['pv','P','tea','ny','income','desg','pins','admin','upfront','bbp','green'].forEach(id=>$(id).addEventListener('input',recalc));
+buildScnUI();recalc();
+</script>
+</body>
+</html>
